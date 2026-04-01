@@ -1,0 +1,1 @@
+- [PawPal Data Model Attribute Names](project_data_model.md) — exact attribute names for Owner/Pet/Task and the Owner→Pet→Task relationship chain

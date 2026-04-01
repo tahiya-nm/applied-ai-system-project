@@ -22,6 +22,16 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## Smarter Scheduling
+
+PawPal+ now includes several algorithmic enhancements to the core `Scheduler` class:
+
+- **Priority-first scheduling** — `generate_plan()` greedily schedules tasks ordered by priority (HIGH → LOW), using duration as a tie-breaker (shortest first), and skips tasks that exceed the owner's remaining time budget.
+- **Recurring tasks** — Tasks can be marked `daily` or `weekly`. After completion, `apply_recurrence()` automatically spawns the next instance with an advanced due date so the owner never has to re-enter repeating care routines.
+- **Conflict detection** — `detect_conflicts()` scans all timed tasks and warns when two tasks overlap on the same schedule, preventing double-booking across pets.
+- **Time-ordered view** — `sort_by_time()` returns tasks sorted chronologically by `scheduled_time`; untimed tasks appear last.
+- **Flexible filtering** — `Owner.get_filtered_tasks()` lets the UI filter tasks by completion status, pet name, or both at once.
+
 ## Getting started
 
 ### Setup

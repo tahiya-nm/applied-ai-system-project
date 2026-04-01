@@ -44,8 +44,11 @@ Yes, the design changed in four ways after reviewing the skeleton for missing re
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+The scheduler uses a **greedy first-fit algorithm**: it sorts all tasks by priority, then walks the list once and schedules each task that fits in the remaining time budget — never reconsidering earlier decisions.
+
+This means a single large HIGH-priority task (e.g., a 40-minute vet checkup) can consume so much of the budget that several smaller, also-important tasks get skipped entirely. A smarter approach — like checking whether swapping a scheduled task for a skipped one would yield a better overall outcome — would produce tighter, more balanced plans.
+
+The tradeoff is reasonable here because pet care tasks are short (5–40 minutes), budgets are small (≤120 minutes), and the priority ordering reflects real urgency. For typical daily use, greedy scheduling produces an acceptable plan without the added complexity of backtracking or optimization.
 
 ---
 
