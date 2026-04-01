@@ -40,7 +40,13 @@ Yes, the design changed in four ways after reviewing the skeleton for missing re
 **a. Constraints and priorities**
 
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
+    - **Time**: The owner's daily time budget (in minutes) is the primary constraint. The scheduler must fit tasks within this limit, skipping any that would exceed it.
+    - **Priority**: Each task has a priority level (HIGH, MEDIUM, LOW). The scheduler must order tasks by priority, scheduling all HIGH before any MEDIUM, and all MEDIUM before any LOW.
+    - **Duration**: Among tasks of the same priority, shorter tasks are scheduled before longer ones to maximize the number of tasks that fit within the time budget.
+    - **Recurrence**: Tasks can be one-time, daily, or weekly. The scheduler must only consider tasks that are due today (or overdue), and must automatically spawn the next occurrence of recurring tasks after completion.
+    - **Conflict detection**: The scheduler must detect and warn about any overlapping timed tasks across all pets, as these represent scheduling conflicts that the owner should be aware of.
 - How did you decide which constraints mattered most?
+    - The time budget is the hard limit that defines what can and cannot be scheduled, so it is the most critical constraint. Priority is the next most important factor, as it reflects the real-world urgency of tasks (e.g., medication is more urgent than a walk). Duration is a tie-breaker that helps fit more tasks within the budget. Recurrence is important for realistic task management but doesn't affect the scheduling of today's plan directly. Conflict detection is a user-friendly feature that helps surface issues but doesn't prevent scheduling on its own.
 
 **b. Tradeoffs**
 
@@ -57,12 +63,22 @@ The tradeoff is reasonable here because pet care tasks are short (5–40 minutes
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+    - I used AI for design brainstorming to help identify key classes and their relationships, which led to a more robust initial design. 
+    - I also used it for debugging specific issues in the scheduling logic, such as correctly handling the shared time budget across multiple pets. 
+    - I used Gemini to help navigate Claude's Agent Mode. 
+    - Finally, I used AI for refactoring code to improve readability and maintainability, especially in the `generate_plan()` method where the scheduling logic is implemented.
 - What kinds of prompts or questions were most helpful?
+    - Prompts that asked for specific design patterns (e.g., "How would you design a pet care scheduler with multiple pets and shared time budgets?") were helpful for structuring the initial classes. 
+    - For debugging, prompts that included code snippets and asked for explanations of why certain logic wasn't working (e.g., "Why is my scheduler allowing multiple pets to exceed the time budget?") were effective. 
+    - For refactoring, prompts that asked for more readable or efficient code while maintaining the same functionality were useful.
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+    - One moment was when the AI suggested that `Scheduler` should take both `Owner` and `Pet` as parameters. I realized that this would lead to a design where each pet's tasks are scheduled independently, which would break the shared time budget constraint. 
+    - I chose to reject this suggestion and instead refactor the design so that `Scheduler` only takes `Owner`, allowing it to access all pets and their tasks in a single pass.
 - How did you evaluate or verify what the AI suggested?
+    - I evaluated the AI's suggestion by considering the implications of having `Scheduler` take both `Owner` and `Pet`. I realized that this would lead to a situation where each pet's tasks are scheduled without regard to the shared time budget, effectively allowing the total scheduled time to exceed the owner's limit. This was a critical flaw in the design, so I rejected the suggestion and refactored accordingly.
 
 ---
 
@@ -71,12 +87,28 @@ The tradeoff is reasonable here because pet care tasks are short (5–40 minutes
 **a. What you tested**
 
 - What behaviors did you test?
+    - I tested the sorting behavior to ensure tasks are returned in chronological order and that untimed tasks always sort last. 
+    - I also tested the recurrence logic to verify that completed daily tasks spawn a new instance due the next day, weekly tasks advance by 7 days, and non-recurring tasks never spawn. 
+    - I tested conflict detection to confirm that overlapping timed tasks produce a warning string, while back-to-back tasks do not. 
+    - I tested plan generation to ensure that high-priority tasks are scheduled first, same-priority tasks pick shortest-first, and that tasks due tomorrow are excluded while overdue tasks are included. 
+    - Finally, I tested filtering to verify that `get_filtered_tasks` correctly filters by completion status, pet name (case-insensitive), and nonexistent pets return an empty list.
 - Why were these tests important?
+    - These tests were important to verify that the core functionalities of the scheduler work as intended. 
+    - Sorting ensures that tasks are presented in a logical order. 
+    - Recurrence is crucial for realistic task management. 
+    - Conflict detection helps surface scheduling issues to the user. 
+    - Plan generation tests confirm that the scheduling logic correctly prioritizes and fits tasks within the time budget. 
+    - Filtering tests ensure that users can effectively manage and view their tasks based on different criteria.
 
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
+    - I am reasonably confident that the scheduler works correctly for typical use cases, as the tests cover a wide range of behaviors and edge cases. 
+    - However, there may still be edge cases that I haven't thought of or tested yet, such as handling tasks with zero duration, tasks that exactly match the remaining time budget, or how the system behaves when all tasks are untimed.
 - What edge cases would you test next if you had more time?
+    - I would test how the scheduler handles tasks with zero duration, as these could potentially be scheduled without affecting the time budget. 
+    - I would also test tasks that exactly match the remaining time budget to ensure they are scheduled correctly. 
+    - Additionally, I would test the behavior when all tasks are untimed to confirm that they are sorted last and do not interfere with the scheduling of timed tasks.
 
 ---
 
@@ -85,11 +117,20 @@ The tradeoff is reasonable here because pet care tasks are short (5–40 minutes
 **a. What went well**
 
 - What part of this project are you most satisfied with?
+    - I am most satisfied with the overall design of the system, particularly how the classes interact and how the scheduling logic is structured. 
+    - The use of a shared time budget across multiple pets was a key design decision that I believe adds realism and complexity to the scheduler. 
+    - I am also pleased with the implementation of conflict detection, as it provides valuable feedback to users about potential scheduling issues.
 
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
+    - If I had another iteration, I would improve the scheduling algorithm to consider swapping out lower-priority tasks for higher-priority ones that come later in the list, rather than using a strict greedy approach. 
+    - This would allow for more optimal scheduling and better utilization of the time budget. 
+    - I would also consider adding user preferences (e.g., "I prefer walks in the morning") to further customize the scheduling logic.
 
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+    - One important thing I learned is that while AI can provide valuable suggestions and help with brainstorming, it's crucial to critically evaluate those suggestions in the context of the overall system design. 
+    - Not all AI-generated ideas will fit well with the specific constraints and requirements of the project, so human judgement is essential in deciding which suggestions to accept, modify, or reject. 
+    - Additionally, having a clear understanding of the problem domain and the relationships between different components of the system helps in making informed decisions about design and implementation.

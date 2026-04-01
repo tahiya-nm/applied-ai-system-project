@@ -12,6 +12,16 @@
 - **Time budget progress** — The generated schedule displays a progress bar showing minutes used vs. the owner's daily budget, with each scheduled or skipped task explained.
 - **Multi-pet support** — An owner can have multiple pets; tasks are assigned per pet and displayed and scheduled together.
 
+## 📸 Demo
+
+| Description | Screenshot |
+|-------------|------------|
+| **Owner setup** — Enter an owner name and daily time budget (in minutes), then click "Set Owner" to initialize the session. | ![Owner setup](images/owner.png) |
+| **Add a Pet** — Add one or more pets by name and species. Added pets are listed immediately below the form. | ![Add a Pet](images/add-pet.png) |
+| **Task list** — Tasks are displayed per pet in a table sorted by scheduled time, showing duration, priority, recurrence, and completion status. Conflict warnings appear inline when tasks overlap. | ![Task list](images/tasks.png) |
+| **Filter Tasks** — Filter the task list by pet, completion status (Pending / Completed), or both at once. | ![Filter Tasks](images/filtered-tasks.png) |
+| **Generated schedule** — The scheduler produces a priority-ordered daily plan with a time-budget progress bar, listing scheduled tasks in green and skipped tasks (with reasons) in red. | ![Generated schedule](images/schedule.png) |
+
 ## Running the app
 
 ```bash
