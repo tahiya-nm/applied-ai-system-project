@@ -187,8 +187,18 @@ class Scheduler:
             for task in list(pet.get_tasks()):  # copy so append mid-loop is safe
                 if task.completed and task.recurrence in ("daily", "weekly"):
                     next_task = task.next_occurrence()
-                    pet.add_task(next_task)
-                    refreshed.append((pet, next_task))
+                    # Guard: skip if a pending task with this title already exists
+                    # for the same or later due_date (prevents double-spawning on
+                    # repeated apply_recurrence() calls).
+                    already_exists = any(
+                        t.title == task.title
+                        and not t.completed
+                        and t.due_date >= next_task.due_date
+                        for t in pet.get_tasks()
+                    )
+                    if not already_exists:
+                        pet.add_task(next_task)
+                        refreshed.append((pet, next_task))
         return refreshed
 
     def detect_conflicts(self) -> list[str]:

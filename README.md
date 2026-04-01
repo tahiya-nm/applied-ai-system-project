@@ -32,6 +32,34 @@ PawPal+ now includes several algorithmic enhancements to the core `Scheduler` cl
 - **Time-ordered view** — `sort_by_time()` returns tasks sorted chronologically by `scheduled_time`; untimed tasks appear last.
 - **Flexible filtering** — `Owner.get_filtered_tasks()` lets the UI filter tasks by completion status, pet name, or both at once.
 
+## Testing PawPal+
+
+### Running the tests
+
+```bash
+python -m pytest tests/test_pawpal.py -v
+```
+
+### What the tests cover
+
+The suite contains **24 tests** across five behavioral areas:
+
+| Area | What is verified |
+|------|-----------------|
+| **Sorting** | Tasks return in chronological order; untimed tasks (`scheduled_time=None`) always sort last; no crash when all tasks are untimed |
+| **Recurrence** | A completed daily task spawns a new instance due the next day; weekly tasks advance by 7 days; non-recurring tasks never spawn; calling `apply_recurrence()` twice does not create duplicate next-occurrences |
+| **Conflict detection** | Overlapping timed tasks produce a warning string; back-to-back tasks (end == start) do not; cross-pet overlaps are caught; no timed tasks returns an empty list |
+| **Plan generation** | High-priority tasks are scheduled first; same-priority tasks pick shortest-first; tasks due tomorrow are excluded; overdue tasks are included; a zero-minute budget skips everything; a task that exactly fills the budget is accepted |
+| **Filtering & summary** | `get_filtered_tasks` filters by completion status, pet name (case-insensitive), and nonexistent pets return `[]`; `Plan.summary()` contains the owner name, time budget, and both section headers |
+
+### Confidence level
+
+**★★★★☆ (4 / 5)**
+
+The core scheduling logic — priority ordering, recurrence spawning, conflict detection, and filtering — is well-covered and all 24 tests pass. One star is withheld because the Streamlit UI layer (`app.py`) has no automated tests, so end-to-end user flows (form input, session state, rendering) rely on manual verification.
+
+---
+
 ## Getting started
 
 ### Setup
