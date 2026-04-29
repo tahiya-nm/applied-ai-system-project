@@ -1,5 +1,8 @@
+import os
+
 import streamlit as st
 from pawpal_system import Owner, Pet, Task, Priority, Scheduler
+from ai import rag_assistant
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
@@ -39,10 +42,48 @@ def task_time_label(t: Task) -> str:
 st.title("🐾 PawPal+")
 st.caption("Your daily pet care scheduler")
 
-# ── Owner setup ───────────────────────────────────────────────────────────────
+# ── Session state init ────────────────────────────────────────────────────────
 
 if "owner" not in st.session_state:
     st.session_state.owner = None
+if "ai_chat_history" not in st.session_state:
+    st.session_state.ai_chat_history = []
+
+# ── AI Care Assistant sidebar ─────────────────────────────────────────────────
+
+with st.sidebar:
+    st.markdown("### 🤖 AI Care Assistant")
+    st.caption("Ask about your pets' care needs")
+    st.divider()
+
+    _owner = st.session_state.owner
+    _has_key = bool(os.getenv("OPENAI_API_KEY"))
+
+    if not _has_key:
+        st.warning("Set `OPENAI_API_KEY` to enable AI features.")
+    elif _owner is None:
+        st.info("Set up your owner first to start chatting.")
+    elif not _owner.pets:
+        st.info("Add a pet — I need to know your pet's species to look up care guidelines.")
+    else:
+        for msg in st.session_state.ai_chat_history:
+            with st.chat_message(msg["role"]):
+                st.write(msg["content"])
+
+        user_q = st.chat_input("Ask about your pets' care...")
+        if user_q:
+            st.session_state.ai_chat_history.append({"role": "user", "content": user_q})
+            with st.spinner("Looking up care guidelines..."):
+                answer = rag_assistant.ask(user_q, _owner)
+            st.session_state.ai_chat_history.append({"role": "assistant", "content": answer})
+            st.rerun()
+
+        if st.session_state.ai_chat_history:
+            if st.button("Clear chat", key="clear_chat"):
+                st.session_state.ai_chat_history = []
+                st.rerun()
+
+# ── Owner setup ───────────────────────────────────────────────────────────────
 
 st.subheader("👤 Owner")
 owner_name = st.text_input("Owner name", value="Jordan")
