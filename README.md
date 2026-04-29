@@ -125,6 +125,8 @@ skipping more than one day in a row is not recommended. Given Buddy's current
 
 ## Testing Summary
 
+**15 of 15 deterministic tests pass; 5 LLM-as-judge tests are skipped without an API key.** All 4 guardrails fire correctly, and the AI consistently declines to answer when the question falls outside the retrieved guidelines (e.g., asked for a dog food brand recommendation, it responded: *"The care guidelines do not specify any particular brands — consult a veterinarian."*). Every query, response, guardrail event, and API error is logged to `ai/pawpal_ai.log` in structured JSONL with timestamps and token counts for ongoing monitoring.
+
 The test suite has **44 tests** across two files. Run with:
 
 ```bash
