@@ -2,6 +2,8 @@
 
 **PawPal+** is an AI-powered pet care assistant that helps multi-pet owners plan daily care schedules, detect conflicts, and get grounded answers to species-specific care questions — all in a single Streamlit app.
 
+> **[▶ Live Demo on Streamlit Cloud](https://your-app.streamlit.app)** &nbsp;|&nbsp; **[📹 Video Walkthrough](https://youtube.com/your-link-here)**
+
 ---
 
 ## Original Project
@@ -188,3 +190,11 @@ python -m pytest tests/ -v
 - The scheduler — the core value of the app — required no AI at all.
 - A greedy algorithm with clear priority rules is deterministic, testable, and explainable in a way a language model isn't.
 - AI earned its place in the layer where the problem is genuinely unstructured: "what's the right way to care for this specific animal?" has too many variables for hand-coded rules.
+
+---
+
+## Portfolio
+
+**What this project says about me as an AI engineer:**
+
+I don't reach for AI because it's available — I reach for it when it's the right tool. PawPal+ has a fully algorithmic scheduling engine at its core, and I kept it that way on purpose: deterministic logic is testable, explainable, and reliable in a way a language model isn't. Where I did bring in AI — answering open-ended care questions — I built guardrails and retrieval constraints around it before I wrote a single prompt, because I've learned that a model without constraints is just a confident guesser. I also tested the AI behavior the same way I'd test any other component: automated checks, logged outputs, and a second model evaluating the first. That combination — knowing when to use AI, how to constrain it, and how to verify it — is how I think about building systems that are actually trustworthy.

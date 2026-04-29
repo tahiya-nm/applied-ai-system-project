@@ -1,5 +1,8 @@
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
 from pawpal_system import Owner, Pet, Task, Priority, Scheduler
 from ai import rag_assistant
