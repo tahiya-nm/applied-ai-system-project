@@ -2,7 +2,8 @@
 
 **PawPal+** is an AI-powered pet care assistant that helps multi-pet owners plan daily care schedules, detect conflicts, and get grounded answers to species-specific care questions — all in a single Streamlit app.
 
-> **[▶ Live Demo on Streamlit Cloud](https://your-app.streamlit.app)** &nbsp;|&nbsp; **[📹 Video Walkthrough](https://youtube.com/your-link-here)**
+> **[▶ Live Demo on Streamlit Cloud](https://tahiya-pawpal-applied-ai-system-project.streamlit.app/)** &nbsp;
+> |&nbsp; **[📹 Video Walkthrough](https://youtu.be/89Q44BqSudk)**
 
 ---
 
