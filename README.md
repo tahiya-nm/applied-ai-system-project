@@ -196,6 +196,9 @@ python -m pytest tests/ -v
 
 ## Portfolio
 
+> **[▶ Live Demo on Streamlit Cloud](https://tahiya-pawpal-applied-ai-system-project.streamlit.app/)** &nbsp;
+> |&nbsp; **[📹 Video Walkthrough](https://youtu.be/89Q44BqSudk)**
+
 **What this project says about me as an AI engineer:**
 
 I've found that I don't reach for AI because it's available; I reach for it when it's the right tool. PawPal+ has a fully algorithmic scheduling engine at its core, and I kept it that way on purpose: deterministic logic is testable, explainable, and reliable in a way a language model isn't. When I did bring in AI (when answering open-ended care questions), I built guardrails and retrieval constraints around it before I wrote a single prompt, because I've learned that a model without constraints is just a confident guesser. I also tested the AI behavior the same way I'd test any other component: automated checks, logged outputs, and a second model evaluating the first. The combination of knowing when to use AI, how to constrain it, and how to verify it is how I think about building systems that are actually trustworthy.
