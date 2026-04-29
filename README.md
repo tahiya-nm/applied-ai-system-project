@@ -12,6 +12,17 @@ PawPal+ adds a RAG-powered chat assistant that answers pet care questions using 
 
 ---
 
+## Advanced AI Features
+
+This project implements two of the required advanced AI features:
+
+| Feature | Implementation |
+|---------|---------------|
+| **Retrieval-Augmented Generation (RAG)** | Before every OpenAI call, `rag_assistant.py` queries a local species-specific knowledge base (`guidelines_kb.py`) and injects the retrieved guidelines directly into the prompt. The model is explicitly instructed to answer only from that context — retrieved data actively shapes every response, not just accompanies it. |
+| **Reliability & Testing System** | 20 tests in `tests/test_ai_features.py` measure AI performance at two tiers: 15 deterministic tests verify guardrail behavior, retrieval correctness, and JSONL log format without any API calls; 5 LLM-as-judge tests make live OpenAI calls to score response groundedness and relevance. All AI events are also logged to `ai/pawpal_ai.log` with timestamps and token counts for ongoing monitoring. |
+
+---
+
 ## Why It Matters
 
 Pet owners juggling multiple animals often struggle to balance care tasks across a limited daily time budget, and generic AI chatbots give inconsistent advice when asked about pet care specifics. PawPal+ solves both problems in one place: a scheduler grounded in real constraints, plus a care assistant grounded in documented guidelines — not model hallucinations.
@@ -102,47 +113,61 @@ skipping more than one day in a row is not recommended. Given Buddy's current
 
 ## Design Decisions
 
-**Greedy scheduling over optimization.** The scheduler sorts tasks by priority (HIGH → MEDIUM → LOW) and duration (shortest-first as a tie-breaker), then walks the list once and fits tasks into the remaining budget. A knapsack-style optimizer would find tighter solutions, but for daily pet care — short durations, small budgets, clear priority ordering — greedy produces acceptable plans with far less complexity.
-
-**`Scheduler` takes `Owner`, not individual pets.** Early designs passed `Owner` + `Pet` separately, which would apply the full time budget per pet and effectively multiply available time. Taking only `Owner` and iterating `owner.pets` puts all tasks into a single shared pool under one budget, which matches how a real owner's day works.
-
-**RAG over fine-tuning.** A fine-tuned model would be expensive to update when care guidelines change. Keyword-based retrieval from a local knowledge base is fast, cheap, auditable, and easy to extend — add a new species key to `CARE_GUIDELINES` and it's immediately available.
-
-**Constrained system prompt.** The assistant is explicitly told to answer only from retrieved guidelines and to say so clearly when it can't. This trades recall (it won't draw on broad model knowledge) for reliability — responses stay grounded and consistent across runs.
-
-**`Priority` as an enum.** Using raw strings would allow values like `"urgent"` or `"HIGH"` to silently corrupt sorting. An enum makes invalid priorities a hard error at construction time.
+| Decision | What I chose | Trade-off |
+|----------|-------------|-----------|
+| **Scheduling algorithm** | Greedy priority-first (HIGH → MEDIUM → LOW, shortest-first tie-break) | Simpler and fast enough for short daily task lists; a knapsack optimizer would pack budgets tighter but adds complexity that isn't justified for 5–40 min tasks |
+| **`Scheduler` input** | Takes `Owner` only, iterates `owner.pets` internally | Early design passed `Owner` + `Pet` separately — this silently doubled the time budget for multi-pet owners; one owner → one shared pool fixes that |
+| **AI approach** | RAG with a local knowledge base over fine-tuning | Fine-tuning is expensive to update; adding a new species is one dict key in `guidelines_kb.py` with RAG |
+| **System prompt** | Explicitly constrained to retrieved context only | Trades recall (won't use broad model knowledge) for reliability — responses stay consistent and auditable |
+| **`Priority` type** | `Priority` enum instead of raw strings | Raw strings allow silent invalid values like `"urgent"`; the enum makes a bad priority a hard error at construction time |
 
 ---
 
 ## Testing Summary
 
-The test suite has **44 tests** across two files.
+The test suite has **44 tests** across two files. Run with:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-| File | Tests | Scope |
-|------|-------|-------|
-| `tests/test_pawpal.py` | 24 | Core domain logic |
-| `tests/test_ai_features.py` | 15 deterministic + 5 LLM-as-judge | AI features |
+### What's covered
 
-**Core domain (24 tests)** — Covers chronological sorting (untimed tasks always last), daily and weekly recurrence (no double-spawning on repeat calls), conflict detection (overlapping vs. back-to-back), plan generation (priority order, shortest-first tie-break, zero-budget edge case, exact-fit task), and `get_filtered_tasks` (by status, pet name, case-insensitivity, nonexistent pet).
+| Area | # Tests | What is verified |
+|------|---------|-----------------|
+| **Sorting** | 3 | Chronological order; untimed tasks always last; no crash when all tasks are untimed |
+| **Recurrence** | 4 | Daily tasks advance +1 day; weekly +7 days; non-recurring never spawns; no double-spawn on repeat calls |
+| **Conflict detection** | 4 | Overlapping tasks produce a warning; back-to-back (end == start) do not; cross-pet overlaps are caught |
+| **Plan generation** | 7 | Priority order respected; shortest-first tie-break; zero-budget skips all; exact-fit task is accepted; overdue tasks included, future tasks excluded |
+| **Filtering** | 6 | By completion status; by pet name (case-insensitive); nonexistent pet returns `[]`; combined filters |
+| **KB retrieval** | 6 | Correct guideline returned for each species (dog, cat, rabbit, bird, fish, other) |
+| **Guardrails** | 4 | Empty query, no pets configured, query too long (truncated), missing API key |
+| **Logging** | 5 | JSONL format correctness, required fields present, token counts logged |
+| **LLM-as-judge** | 5 | Live OpenAI calls verify response groundedness and relevance *(skipped without `OPENAI_API_KEY`)* |
 
-**AI features (20 tests)** — 15 deterministic tests cover knowledge-base retrieval for each species, all four guardrails (empty query, no pets, query too long, missing API key), and JSONL log format correctness. 5 LLM-as-judge tests make live OpenAI calls to evaluate response quality against criteria like groundedness and relevance; they skip automatically when no API key is set.
+### What worked, what didn't, what's next
 
-**What worked:** The deterministic tests caught two real bugs — a double-spawn edge case in recurrence and a case where back-to-back tasks were incorrectly flagged as conflicts. The LLM-as-judge tests were valuable for verifying that the constrained prompt actually kept responses on-topic.
-
-**What didn't:** LLM-as-judge tests are non-deterministic and occasionally flake on borderline responses. Running them in CI without a stable scoring rubric would produce noisy failures.
-
-**What I'd add next:** Property-based tests for the scheduler (randomized task sets, budget values) and snapshot tests for the RAG prompt structure to catch regressions when the knowledge base changes.
+| | Notes |
+|--|-------|
+| **Worked well** | Deterministic tests caught two real bugs: a double-spawn edge case in recurrence, and back-to-back tasks incorrectly flagged as conflicts. LLM-as-judge tests confirmed the constrained prompt actually kept responses on-topic. |
+| **Didn't work** | LLM-as-judge tests are non-deterministic and occasionally flake on borderline responses — not reliable enough for CI without a tighter scoring rubric. |
+| **Would add next** | Property-based tests for the scheduler (randomized task sets and budgets) and snapshot tests for the RAG prompt structure to catch regressions when the knowledge base changes. |
 
 ---
 
 ## Reflection
 
-Building PawPal+ clarified something that's easy to miss when AI tools feel magical: a system is only as reliable as the constraints you build around the model. The RAG assistant works not because GPT-4o-mini is inherently accurate about pet care, but because the prompt tells it to refuse anything outside the retrieved context. Removing that constraint in testing produced responses that sounded confident but cited frequencies and durations inconsistent with the knowledge base.
+### Constraints matter more than the model
+- The RAG assistant works not because GPT-4o-mini is inherently accurate about pet care, but because the prompt tells it to refuse anything outside the retrieved context.
+- Removing that constraint in testing produced responses that sounded confident but cited frequencies and durations inconsistent with the knowledge base.
+- A system is only as reliable as the guardrails you build around it.
 
-The bigger lesson was about where AI fits in a system versus where it doesn't. The scheduler — the core value of the app — required no AI at all. A well-designed greedy algorithm with clear priority rules solves the scheduling problem better than a language model would, because it's deterministic, testable, and explainable. AI earned its place in the layer where the problem is genuinely unstructured: "what's the right way to care for this specific animal?" is a question with too many variables for hand-coded rules, and that's exactly where retrieval-augmented generation shines.
+### Know where AI belongs — and where it doesn't
+- The scheduler — the core value of the app — required no AI at all.
+- A greedy algorithm with clear priority rules is deterministic, testable, and explainable in a way a language model isn't.
+- AI earned its place in the layer where the problem is genuinely unstructured: "what's the right way to care for this specific animal?" has too many variables for hand-coded rules, and that's where RAG shines.
 
-Working iteratively with Claude Code also changed how I think about software design collaboration. The most useful AI contributions weren't code generation — they were constraint discovery. When I described the multi-pet scheduling problem, the model immediately surfaced the shared-budget issue that would have broken the design. I still had to evaluate whether that concern was real and how to fix it, but having a fast, skeptical second opinion during design accelerated the thinking significantly.
+### AI is most useful as a design collaborator, not just a code generator
+- The most valuable AI contributions during this project weren't code — they were constraint discovery.
+- When I described the multi-pet scheduling problem, the model immediately surfaced the shared-budget issue that would have broken the design.
+- I still had to evaluate whether the concern was real and decide how to fix it — but having a fast, skeptical second opinion during design accelerated the thinking significantly.
