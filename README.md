@@ -9,7 +9,7 @@
 
 ## Original Project
 
-This project extends **PawPal Pet Management System** (Modules 1–3), a Python-based CLI tool for managing tasks across multiple pets with a shared daily time budget. The original app let owners add pets and care tasks, generate a priority-ordered schedule, detect time conflicts, and mark recurring tasks as complete. It had no AI features — scheduling logic was purely algorithmic, and care advice required the owner to look things up elsewhere.
+This project extends the **PawPal Pet Management System**, a tool for managing tasks across multiple pets with a shared daily time budget. The original app let owners add pets and care tasks, generate a priority-ordered schedule, detect time conflicts, and mark recurring tasks as complete. It had no AI features — scheduling logic was purely algorithmic, and care advice required the owner to look things up elsewhere.
 
 PawPal+ adds a RAG-powered chat assistant that answers pet care questions using a curated species-specific knowledge base, with guardrails and structured logging built in.
 
