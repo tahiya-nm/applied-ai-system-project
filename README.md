@@ -159,17 +159,32 @@ python -m pytest tests/ -v
 
 ## Reflection
 
+### Limitations and biases in the system
+- The knowledge base only covers six species (dog, cat, rabbit, bird, fish, other) and a small set of task types — any question about an exotic pet or an uncommon care task retrieves nothing, and the model must admit it can't help.
+- Retrieval is keyword-based: if a user phrases a question in an unexpected way (e.g., "potty training" instead of "training"), the relevant guideline may not be retrieved even if it exists.
+- The guidelines themselves are manually authored and reflect general best practices — they don't account for individual animal health conditions, breeds, or regional differences in veterinary guidance.
+- The scheduler has no awareness of user preference or energy level — it treats all HIGH-priority tasks as equally urgent, which may not reflect a real owner's situation on a given day.
+
+### Could this be misused, and how is that prevented?
+- A user could attempt to extract general medical or veterinary advice by framing questions carefully — the constrained system prompt and "answer only from retrieved guidelines" instruction significantly limits this, but doesn't eliminate it entirely.
+- The query-length guardrail (truncated at 500 characters) prevents prompt injection attempts that rely on long, carefully crafted inputs.
+- The "no API key → feature hidden" design means the AI layer is never exposed unintentionally in unsecured environments.
+- The model is explicitly instructed to direct users to a veterinarian for anything the guidelines don't cover, which reduces the risk of the system being treated as a substitute for professional care.
+
+### What surprised me while testing reliability
+- The biggest surprise was how confidently the model hallucinated when the constrained prompt was removed during testing — it gave specific-sounding durations and frequencies that weren't in the knowledge base at all, with no indication of uncertainty.
+- The LLM-as-judge tests occasionally disagreed with each other across runs on the same response, which made it clear that using a language model to evaluate another language model introduces its own noise.
+- The guardrail for missing API key was the one most likely to be silently bypassed in a real deployment — logging it as an event (rather than just returning a string) made it visible in the JSONL log, which was a small but meaningful design choice.
+
+### AI collaboration: one helpful suggestion, one flawed one
+- **Helpful:** When describing the multi-pet scheduling problem, the AI immediately flagged that passing both `Owner` and `Pet` as separate `Scheduler` arguments would silently apply the full time budget to each pet independently — effectively doubling available time. That was a genuine constraint I hadn't fully thought through, and it reshaped the core design.
+- **Flawed:** The AI initially suggested mocking the OpenAI client in LLM-as-judge tests using a static return value. This would have made the tests pass trivially without testing anything real — a live API call with an actual judge prompt is the only way to verify that the constrained prompt is actually keeping responses grounded. I rejected the suggestion and kept the live calls.
+
 ### Constraints matter more than the model
 - The RAG assistant works not because GPT-4o-mini is inherently accurate about pet care, but because the prompt tells it to refuse anything outside the retrieved context.
-- Removing that constraint in testing produced responses that sounded confident but cited frequencies and durations inconsistent with the knowledge base.
-- A system is only as reliable as the guardrails you build around it.
+- A system is only as reliable as the guardrails you build around it — the model is the last line, not the first.
 
 ### Know where AI belongs — and where it doesn't
 - The scheduler — the core value of the app — required no AI at all.
 - A greedy algorithm with clear priority rules is deterministic, testable, and explainable in a way a language model isn't.
-- AI earned its place in the layer where the problem is genuinely unstructured: "what's the right way to care for this specific animal?" has too many variables for hand-coded rules, and that's where RAG shines.
-
-### AI is most useful as a design collaborator, not just a code generator
-- The most valuable AI contributions during this project weren't code — they were constraint discovery.
-- When I described the multi-pet scheduling problem, the model immediately surfaced the shared-budget issue that would have broken the design.
-- I still had to evaluate whether the concern was real and decide how to fix it — but having a fast, skeptical second opinion during design accelerated the thinking significantly.
+- AI earned its place in the layer where the problem is genuinely unstructured: "what's the right way to care for this specific animal?" has too many variables for hand-coded rules.
